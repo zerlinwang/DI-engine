@@ -1,8 +1,8 @@
 from easydict import EasyDict
 
 agent_num = 5
-collector_env_num = 8
-evaluator_env_num = 8
+collector_env_num = 2
+evaluator_env_num = 2
 special_global_state = True,
 
 main_config = dict(

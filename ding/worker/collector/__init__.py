@@ -9,6 +9,7 @@ from .battle_sample_serial_collector import BattleSampleSerialCollector
 
 from .base_serial_evaluator import ISerialEvaluator, VectorEvalMonitor, create_serial_evaluator
 from .interaction_serial_evaluator import InteractionSerialEvaluator
+from .interaction_serial_multienv_evaluator import InteractionSerialMultiEnvEvaluator
 from .battle_interaction_serial_evaluator import BattleInteractionSerialEvaluator
 from .metric_serial_evaluator import MetricSerialEvaluator, IMetric
 # parallel
