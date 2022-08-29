@@ -469,6 +469,7 @@ class SMACEnv(SC2Env, BaseEnv):
                     'agent_state': self.get_obs(),
                     'global_state': self.get_global_special_state(),
                     'action_mask': self.get_avail_actions(),
+                    'map_name': self._map_name
                 }
             else:
                 return {
@@ -533,6 +534,8 @@ class SMACEnv(SC2Env, BaseEnv):
         return new_action
 
     def step(self, actions, force_return_two_player=False):
+        # deal with the action to keep dim right
+        actions = actions[:self.n_agents]
         processed_actions = self.action_helper.get_action(actions, self)
         # self._submit_actions(processed_actions)
         try:
@@ -581,6 +584,7 @@ class SMACEnv(SC2Env, BaseEnv):
                     'agent_state': self.get_obs(),
                     'global_state': self.get_global_special_state(),
                     'action_mask': self.get_avail_actions(),
+                    'map_name': self._map_name
                 }
             else:
                 obs = {
@@ -927,7 +931,12 @@ class SMACEnv(SC2Env, BaseEnv):
                 np.float32
             ), np.array(agents_obs_alone_padding_list).astype(np.float32)
         else:
-            return np.array(agents_obs_list).astype(np.float32)
+            agents_obs = np.array(agents_obs_list)
+            # padding the feature to keep the same dim with 10m11m
+            agents_obs = np.pad(agents_obs, ((0, 10-self.n_agents), (0, 135-agents_obs.shape[1])), 'constant')
+            map_dict = dict({"5m_vs_6m": -3, "8m_vs_9m": -2, "10m_vs_11m": -1})
+            agents_obs[:, map_dict[self._map_name]] = 1.
+            return agents_obs.astype(np.float32)
 
     def get_obs_agent(self, agent_id, is_opponent=False):
         unit = self.get_unit_by_id(agent_id, is_opponent=is_opponent)
@@ -1312,8 +1321,12 @@ class SMACEnv(SC2Env, BaseEnv):
         during decentralised execution.
         """
         agents_obs_list = [self.get_state_agent(i, is_opponent) for i in range(self.n_agents)]
-
-        return np.array(agents_obs_list).astype(np.float32)
+        # pad to keep the same dim with 10m11m
+        agents_obs = np.array(agents_obs_list)
+        agents_obs = np.pad(agents_obs, ((0, 10-self.n_agents), (350-agents_obs.shape[1])), 'constant')
+        map_dict = dict({"5m_vs_6m": -3, "8m_vs_9m": -2, "10m_vs_11m": -1})
+        agents_obs[:, map_dict[self._map_name]] = 1.
+        return agents_obs.astype(np.float32)
 
     def get_global_special_state_size(self, is_opponent=False):
         enemy_feats_dim = self.get_state_enemy_feats_size()
@@ -1685,8 +1698,11 @@ class SMACEnv(SC2Env, BaseEnv):
 
     def get_avail_actions(self, is_opponent=False):
         ava_action = self.action_helper.get_avail_actions(self, is_opponent)
-        ava_action = np.array(ava_action).astype(np.float32)
-        return ava_action
+        ava_action = np.array(ava_action)
+        # pad to keep the same dim with 10m11m
+        if self._map_name != "10m_vs_11m":
+            ava_action = np.pad(ava_action, ((0, 10-self.n_agents), (0, 17-ava_action.shape[1])), 'constant')
+        return ava_action.astype(np.float32)
 
     def get_obs_space(self, is_opponent=False):
         T = EnvElementInfo
