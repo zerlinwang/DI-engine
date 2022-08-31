@@ -1323,7 +1323,7 @@ class SMACEnv(SC2Env, BaseEnv):
         agents_obs_list = [self.get_state_agent(i, is_opponent) for i in range(self.n_agents)]
         # pad to keep the same dim with 10m11m
         agents_obs = np.array(agents_obs_list)
-        agents_obs = np.pad(agents_obs, ((0, 10-self.n_agents), (350-agents_obs.shape[1])), 'constant')
+        agents_obs = np.pad(agents_obs, ((0, 10-self.n_agents), (0, 350-agents_obs.shape[1])), 'constant')
         map_dict = dict({"5m_vs_6m": -3, "8m_vs_9m": -2, "10m_vs_11m": -1})
         agents_obs[:, map_dict[self._map_name]] = 1.
         return agents_obs.astype(np.float32)
