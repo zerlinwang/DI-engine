@@ -232,27 +232,9 @@ class SampleSerialCollector(ISerialCollector):
                 obs = self._env.ready_obs
                 # Policy forward.
                 self._obs_pool.update(obs)
-                # if self._transform_obs:
-                #     obs = to_tensor(obs, dtype=torch.float32)
-                obs = to_tensor(obs, dtype=torch.float32)
-                agent_num = obs[0]['agent_state'].shape[0]
-                agent_obs_shape = obs[0]['agent_state'].shape[1]
-                global_obs_shape = obs[0]['global_state'].shape[1]
-                action_shape = obs[0]['action_mask'].shape[1]
-
-                if agent_num != 10:
-                    for key in obs.keys():
-                        obs[key]['agent_state'] = torch.nn.ConstantPad2d((0, 132-agent_obs_shape, 0, 10-agent_num), 0.)(obs[key]['agent_state'])
-                        obs[key]['global_state'] = torch.nn.ConstantPad2d((0, 347-global_obs_shape, 0, 10-agent_num), 0.)(obs[key]['global_state'])
-                        obs[key]['action_mask'] = torch.nn.ConstantPad2d((0, 17-action_shape, 0, 10-agent_num), 0.)(obs[key]['action_mask'])
-
+                if self._transform_obs:
+                    obs = to_tensor(obs, dtype=torch.float32)
                 policy_output = self._policy.forward(obs, **policy_kwargs)
-                # restore the policy_output
-                for env_id in policy_output.keys():
-                    policy_output[env_id]['logit'] = policy_output[env_id]['logit'][:agent_num, :action_shape]
-                    policy_output[env_id]['action'] = policy_output[env_id]['action'][:agent_num]
-                    policy_output[env_id]['value'] = policy_output[env_id]['value'][:agent_num]
-
                 self._policy_output_pool.update(policy_output)
                 # Interact with env.
                 actions = {env_id: output['action'] for env_id, output in policy_output.items()}
