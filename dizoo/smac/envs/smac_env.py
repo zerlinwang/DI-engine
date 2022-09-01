@@ -469,7 +469,6 @@ class SMACEnv(SC2Env, BaseEnv):
                     'agent_state': self.get_obs(),
                     'global_state': self.get_global_special_state(),
                     'action_mask': self.get_avail_actions(),
-                    'map_name': self._map_name
                 }
             else:
                 return {
@@ -584,7 +583,6 @@ class SMACEnv(SC2Env, BaseEnv):
                     'agent_state': self.get_obs(),
                     'global_state': self.get_global_special_state(),
                     'action_mask': self.get_avail_actions(),
-                    'map_name': self._map_name
                 }
             else:
                 obs = {
@@ -1720,11 +1718,19 @@ class SMACEnv(SC2Env, BaseEnv):
             )
         else:
             if self.special_global_state:
+                # obs_space = T(
+                #     {
+                #         'agent_state': (agent_num, self.get_obs_size(is_opponent)),
+                #         'global_state': (agent_num, self.get_global_special_state_size(is_opponent)),
+                #         'action_mask': (agent_num, *self.action_helper.info().shape),
+                #     },
+                #     None,
+                # )
                 obs_space = T(
                     {
-                        'agent_state': (agent_num, self.get_obs_size(is_opponent)),
-                        'global_state': (agent_num, self.get_global_special_state_size(is_opponent)),
-                        'action_mask': (agent_num, *self.action_helper.info().shape),
+                        'agent_state': (10, 135),
+                        'global_state': (10, 350),
+                        'action_mask': (10, 17),
                     },
                     None,
                 )
