@@ -100,7 +100,9 @@ class BaseEnv(gym.Env, ABC, metaclass=FinalMeta):
             Elements(env config) in collector_env_cfg/evaluator_env_cfg can be different, such as server ip and port.
         """
         collector_env_num = cfg.pop('collector_env_num')
-        return [cfg for _ in range(collector_env_num)]
+        # to keep deepcopy
+        cfg_list = [cfg for _ in range(collector_env_num)]
+        return list(map(copy.deepcopy, cfg_list))
 
     @staticmethod
     def create_evaluator_env_cfg(cfg: dict) -> List[dict]:
@@ -115,7 +117,9 @@ class BaseEnv(gym.Env, ABC, metaclass=FinalMeta):
             - env_cfg_list (:obj:`List[dict]`): List of ``cfg`` including all the config evaluator envs.
         """
         evaluator_env_num = cfg.pop('evaluator_env_num')
-        return [cfg for _ in range(evaluator_env_num)]
+        # to keep deepcopy
+        cfg_list = [cfg for _ in range(evaluator_env_num)]
+        return list(map(copy.deepcopy, cfg_list))
 
     # optional method
     def enable_save_replay(self, replay_path: str) -> None:
