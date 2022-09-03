@@ -1,8 +1,8 @@
 from easydict import EasyDict
 
 agent_num = 10
-collector_env_num = 8
-evaluator_env_num = 8
+collector_env_num = 6
+evaluator_env_num = 6
 special_global_state = True
 
 SMAC_10m11m_masac_default_config = dict(
@@ -29,8 +29,8 @@ SMAC_10m11m_masac_default_config = dict(
         on_policy=False,
         random_collect_size=0,
         model=dict(
-            agent_obs_shape=132,
-            global_obs_shape=347,
+            agent_obs_shape=135,
+            global_obs_shape=350,
             action_shape=17,
             twin_critic=True,
             actor_head_hidden_size=256,
@@ -51,7 +51,7 @@ SMAC_10m11m_masac_default_config = dict(
         ),
         collect=dict(
             env_num=collector_env_num,
-            n_sample=1600,
+            n_sample=3000,
             unroll_len=1,
         ),
         command=dict(),

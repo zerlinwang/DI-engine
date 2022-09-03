@@ -1,8 +1,8 @@
 from easydict import EasyDict
 
 agent_num = 27
-collector_env_num = 2
-evaluator_env_num = 2
+collector_env_num = 6
+evaluator_env_num = 6
 special_global_state = True
 
 main_config = dict(
@@ -37,8 +37,8 @@ main_config = dict(
             # For 3s5z, obs_shape=150; for 2c_vs_64zg, agent_num=404.
             # (int) global_obs_shape: The shapeension of global observation.
             # For 3s5z, obs_shape=216; for 2c_vs_64zg, agent_num=342.
-            agent_obs_shape=132,
-            global_obs_shape=347,
+            agent_obs_shape=135,
+            global_obs_shape=350,
             # (int) action_shape: The number of action which each agent can take.
             # action_shape= the number of common action (6) + the number of enemies.
             # For 3s5z, obs_shape=14 (6+8); for 2c_vs_64zg, agent_num=70 (6+64).
@@ -54,7 +54,7 @@ main_config = dict(
             # (bool) Whether to use multi gpu
             multi_gpu=False,
             epoch_per_collect=5,
-            batch_size=3200,
+            batch_size=3000,
             learning_rate=5e-4,
             # ==============================================================
             # The following configs is algorithm-specific

@@ -49,6 +49,14 @@ def serial_pipeline_onpolicy(
     # Create main components: env, policy
     if env_setting is None:
         env_fn, collector_env_cfg, evaluator_env_cfg = get_vec_env_setting(cfg.env)
+        collector_env_cfg[0].map_name = "5m_vs_6m"
+        collector_env_cfg[1].map_name = "5m_vs_6m"
+        collector_env_cfg[2].map_name = "8m_vs_9m"
+        collector_env_cfg[3].map_name = "8m_vs_9m"
+        evaluator_env_cfg[0].map_name = "5m_vs_6m"
+        evaluator_env_cfg[1].map_name = "5m_vs_6m"
+        evaluator_env_cfg[2].map_name = "8m_vs_9m"
+        evaluator_env_cfg[3].map_name = "8m_vs_9m"
     else:
         env_fn, collector_env_cfg, evaluator_env_cfg = env_setting
     collector_env = create_env_manager(cfg.env.manager, [partial(env_fn, cfg=c) for c in collector_env_cfg])
