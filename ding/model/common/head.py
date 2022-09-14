@@ -47,8 +47,7 @@ class DiscreteHead(nn.Module):
         super(DiscreteHead, self).__init__()
         layer = NoiseLinearLayer if noise else nn.Linear
         block = noise_block if noise else fc_block
-        self.Q = nn.Sequential(
-            MLP(
+        self.mlp = MLP(
                 hidden_size,
                 hidden_size,
                 hidden_size,
@@ -56,8 +55,11 @@ class DiscreteHead(nn.Module):
                 layer_fn=layer,
                 activation=activation,
                 norm_type=norm_type
-            ), block(hidden_size, output_size)
         )
+        self.Q_1011 = block(hidden_size, output_size)
+        self.Q_89 = block(hidden_size, output_size)
+        self.Q_56 = block(hidden_size, output_size)
+        self.Q = [self.Q_1011, self.Q_89, self.Q_56]
 
     def forward(self, x: torch.Tensor) -> Dict:
         """
@@ -77,7 +79,9 @@ class DiscreteHead(nn.Module):
             >>> outputs = head(inputs)
             >>> assert isinstance(outputs, dict) and outputs['logit'].shape == torch.Size([4, 64])
         """
-        logit = self.Q(x)
+        index = torch.argmax(x[0, 0, -3:])
+        x = self.mlp(x)
+        logit = self.Q[-index](x)
         return {'logit': logit}
 
 
@@ -924,7 +928,10 @@ class RegressionHead(nn.Module):
         """
         super(RegressionHead, self).__init__()
         self.main = MLP(hidden_size, hidden_size, hidden_size, layer_num, activation=activation, norm_type=norm_type)
-        self.last = nn.Linear(hidden_size, output_size)  # for convenience of special initialization
+        self.last_1011 = nn.Linear(hidden_size, output_size)  # for convenience of special initialization
+        self.last_89 = nn.Linear(hidden_size, output_size)  # for convenience of special initialization
+        self.last_56 = nn.Linear(hidden_size, output_size)  # for convenience of special initialization
+        self.last = [self.last_1011, self.last_89, self.last_56]
         self.final_tanh = final_tanh
         if self.final_tanh:
             self.tanh = nn.Tanh()
@@ -948,8 +955,10 @@ class RegressionHead(nn.Module):
             >>> assert isinstance(outputs, dict)
             >>> assert outputs['pred'].shape == torch.Size([4, 64])
         """
+        # determine which head last to use
+        index = torch.argmax(x[0, 0, -3:])
         x = self.main(x)
-        x = self.last(x)
+        x = self.last[-index](x)
         if self.final_tanh:
             x = self.tanh(x)
         if x.shape[-1] == 1 and len(x.shape) > 1:
