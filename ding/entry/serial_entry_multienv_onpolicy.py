@@ -1,13 +1,13 @@
 from typing import Union, Optional, List, Any, Tuple
 import os
 import torch
-import torch.nn as nn
 from ditk import logging
 from functools import partial
 from tensorboardX import SummaryWriter
+from copy import deepcopy
 
 from ding.envs import get_vec_env_setting, create_env_manager
-from ding.worker import BaseLearner, InteractionSerialMultiEnvEvaluator, BaseSerialCommander, create_buffer, \
+from ding.worker import BaseLearner, InteractionSerialEvaluator, BaseSerialCommander, create_buffer, \
     create_serial_collector
 from ding.config import read_config, compile_config
 from ding.policy import create_policy, PolicyFactory
@@ -16,9 +16,7 @@ from ding.utils import set_pkg_seed
 
 
 def serial_pipeline_marine_onpolicy(
-        input_cfg_5m6m: Union[str, Tuple[dict, dict]],
-        input_cfg_8m9m: Union[str, Tuple[dict, dict]],
-        input_cfg_10m11m: Union[str, Tuple[dict, dict]],
+        input_cfg: Union[str, Tuple[dict, dict]],
         seed: int = 0,
         env_setting: Optional[List[Any]] = None,
         model: Optional[torch.nn.Module] = None,
@@ -27,7 +25,7 @@ def serial_pipeline_marine_onpolicy(
 ) -> 'Policy':  # noqa
     """
     Overview:
-        Serial pipeline entry on-policy RL for multi-map.
+        Serial pipeline entry on-policy RL.
     Arguments:
         - input_cfg (:obj:`Union[str, Tuple[dict, dict]]`): Config in dict type. \
             ``str`` type means config file path. \
@@ -41,156 +39,125 @@ def serial_pipeline_marine_onpolicy(
     Returns:
         - policy (:obj:`Policy`): Converged policy.
     """
-    if isinstance(input_cfg_5m6m, str):
-        cfg_5m6m, create_cfg_5m6m = read_config(input_cfg_5m6m)
-    else:
-        cfg_5m6m, create_cfg_5m6m = input_cfg_5m6m
-    if isinstance(input_cfg_8m9m, str):
-        cfg_8m9m, create_cfg_8m9m = read_config(input_cfg_8m9m)
-    else:
-        cfg_8m9m, create_cfg_8m9m = input_cfg_8m9m
-    if isinstance(input_cfg_10m11m, str):
-        cfg_10m11m, create_cfg_10m11m = read_config(input_cfg_10m11m)
-    else:
-        cfg_10m11m, create_cfg_10m11m = input_cfg_10m11m
-    create_cfg_5m6m.policy.type = create_cfg_5m6m.policy.type + '_command'
-    create_cfg_8m9m.policy.type = create_cfg_8m9m.policy.type + '_command'
-    create_cfg_10m11m.policy.type = create_cfg_10m11m.policy.type + '_command'
+    # if isinstance(input_cfg, str):
+    #     cfg, create_cfg = read_config(input_cfg)
+    # else:
+    #     cfg, create_cfg = deepcopy(input_cfg)
+    cfg_1011, create_cfg_1011 = deepcopy(input_cfg)
+    cfg_1011.exp_name = 'smac_marine_10m11m_mappo_seed0'
+    cfg_1011.env.map_name = '10m_vs_11m'
+    cfg_89, create_cfg_89 = deepcopy(input_cfg)
+    cfg_89.exp_name = 'smac_marine_8m9m_mappo_seed0'
+    cfg_89.env.map_name = '8m_vs_9m'
+    cfg_56, create_cfg_56 = deepcopy(input_cfg)
+    cfg_56.exp_name = 'smac_marine_5m6m_mappo_seed0'
+    cfg_56.env.map_name = '5m_vs_6m'
+    create_cfg_1011.policy.type = create_cfg_1011.policy.type + '_command'
+    create_cfg_89.policy.type = create_cfg_89.policy.type + '_command'
+    create_cfg_56.policy.type = create_cfg_56.policy.type + '_command'
     env_fn = None if env_setting is None else env_setting[0]
-    cfg_5m6m = compile_config(cfg_5m6m, seed=seed, env=env_fn, auto=True, create_cfg=create_cfg_5m6m, save_cfg=True)
-    cfg_8m9m = compile_config(cfg_8m9m, seed=seed, env=env_fn, auto=True, create_cfg=create_cfg_8m9m, save_cfg=True)
-    cfg_10m11m = compile_config(cfg_10m11m, seed=seed, env=env_fn, auto=True, create_cfg=create_cfg_10m11m,
-                                save_cfg=True)
+    cfg_1011 = compile_config(cfg_1011, seed=seed, env=env_fn, auto=True, create_cfg=create_cfg_1011, save_cfg=True)
+    cfg_89 = compile_config(cfg_89, seed=seed, env=env_fn, auto=True, create_cfg=create_cfg_89, save_cfg=True)
+    cfg_56 = compile_config(cfg_56, seed=seed, env=env_fn, auto=True, create_cfg=create_cfg_56, save_cfg=True)
     # Create main components: env, policy
-    if env_setting is None:
-        env_fn_5m6m, collector_env_cfg_5m6m, evaluator_env_cfg_5m6m = get_vec_env_setting(cfg_5m6m.env)
-        env_fn_8m9m, collector_env_cfg_8m9m, evaluator_env_cfg_8m9m = get_vec_env_setting(cfg_8m9m.env)
-        env_fn_10m11m, collector_env_cfg_10m11m, evaluator_env_cfg_10m11m = get_vec_env_setting(cfg_10m11m.env)
-    else:
-        raise
-        env_fn, collector_env_cfg, evaluator_env_cfg = env_setting
-    # set default config for different workers with different envs
-    collector_env_5m6m = create_env_manager(cfg_5m6m.env.manager,
-                                            [partial(env_fn_5m6m, cfg=c) for c in collector_env_cfg_5m6m])
-    collector_env_8m9m = create_env_manager(cfg_8m9m.env.manager,
-                                            [partial(env_fn_8m9m, cfg=c) for c in collector_env_cfg_8m9m])
-    collector_env_10m11m = create_env_manager(cfg_10m11m.env.manager,
-                                              [partial(env_fn_10m11m, cfg=c) for c in collector_env_cfg_10m11m])
-    evaluator_env_5m6m = create_env_manager(cfg_5m6m.env.manager,
-                                            [partial(env_fn_5m6m, cfg=c) for c in evaluator_env_cfg_5m6m])
-    evaluator_env_8m9m = create_env_manager(cfg_8m9m.env.manager,
-                                            [partial(env_fn_8m9m, cfg=c) for c in evaluator_env_cfg_8m9m])
-    evaluator_env_10m11m = create_env_manager(cfg_10m11m.env.manager,
-                                              [partial(env_fn_10m11m, cfg=c) for c in evaluator_env_cfg_10m11m])
-    collector_env_5m6m.seed(cfg_5m6m.seed)
-    collector_env_8m9m.seed(cfg_8m9m.seed)
-    collector_env_10m11m.seed(cfg_10m11m.seed)
-    evaluator_env_5m6m.seed(cfg_5m6m.seed, dynamic_seed=False)
-    evaluator_env_8m9m.seed(cfg_8m9m.seed, dynamic_seed=False)
-    evaluator_env_10m11m.seed(cfg_10m11m.seed, dynamic_seed=False)
-    set_pkg_seed(cfg_10m11m.seed, use_cuda=cfg_5m6m.policy.cuda)
-    policy = create_policy(cfg_10m11m.policy, model=model, enable_field=['learn', 'collect', 'eval', 'command'])
+    # if env_setting is None:
+    #     env_fn, collector_env_cfg, evaluator_env_cfg = get_vec_env_setting(cfg.env)
+    # else:
+    #     env_fn, collector_env_cfg, evaluator_env_cfg = env_setting
+    env_fn_1011, collector_env_cfg_1011, evaluator_env_cfg_1011 = get_vec_env_setting(cfg_1011.env)
+    env_fn_89, collector_env_cfg_89, evaluator_env_cfg_89 = get_vec_env_setting(cfg_89.env)
+    env_fn_56, collector_env_cfg_56, evaluator_env_cfg_56 = get_vec_env_setting(cfg_56.env)
+    collector_env_1011 = create_env_manager(cfg_1011.env.manager, [partial(env_fn_1011, cfg=c) for c in collector_env_cfg_1011])
+    collector_env_89 = create_env_manager(cfg_89.env.manager, [partial(env_fn_89, cfg=c) for c in collector_env_cfg_89])
+    collector_env_56 = create_env_manager(cfg_56.env.manager, [partial(env_fn_56, cfg=c) for c in collector_env_cfg_56])
+    evaluator_env_1011 = create_env_manager(cfg_1011.env.manager, [partial(env_fn_1011, cfg=c) for c in evaluator_env_cfg_1011])
+    evaluator_env_89 = create_env_manager(cfg_89.env.manager, [partial(env_fn_89, cfg=c) for c in evaluator_env_cfg_89])
+    evaluator_env_56 = create_env_manager(cfg_56.env.manager, [partial(env_fn_56, cfg=c) for c in evaluator_env_cfg_56])
+    collector_env_1011.seed(cfg_1011.seed)
+    collector_env_89.seed(cfg_89.seed)
+    collector_env_56.seed(cfg_56.seed)
+    evaluator_env_1011.seed(cfg_1011.seed, dynamic_seed=False)
+    evaluator_env_89.seed(cfg_89.seed, dynamic_seed=False)
+    evaluator_env_56.seed(cfg_56.seed, dynamic_seed=False)
+    set_pkg_seed(cfg_56.seed, use_cuda=cfg_56.policy.cuda)
+    policy = create_policy(cfg_56.policy, model=model, enable_field=['learn', 'collect', 'eval', 'command'])
+
 
     # Create worker components: learner, collector, evaluator, replay buffer, commander.
-    tb_logger = SummaryWriter(os.path.join('./{}/log/'.format(cfg_10m11m.exp_name), 'serial'))
-    learner = BaseLearner(cfg_10m11m.policy.learn.learner, policy.learn_mode, tb_logger, exp_name=cfg_10m11m.exp_name)
-    collector_5m6m = create_serial_collector(
-        cfg_5m6m.policy.collect.collector,
-        env=collector_env_5m6m,
+    tb_logger_1011 = SummaryWriter(os.path.join('./{}/log/'.format(cfg_1011.exp_name), 'serial'))
+    tb_logger_89 = SummaryWriter(os.path.join('./{}/log/'.format(cfg_89.exp_name), 'serial'))
+    tb_logger_56 = SummaryWriter(os.path.join('./{}/log/'.format(cfg_56.exp_name), 'serial'))
+    learner_1011 = BaseLearner(cfg_1011.policy.learn.learner, policy.learn_mode, tb_logger_1011, exp_name=cfg_1011.exp_name)
+    learner_89 = BaseLearner(cfg_89.policy.learn.learner, policy.learn_mode, tb_logger_89, exp_name=cfg_89.exp_name)
+    learner_56 = BaseLearner(cfg_56.policy.learn.learner, policy.learn_mode, tb_logger_56, exp_name=cfg_56.exp_name)
+    collector_1011 = create_serial_collector(
+        cfg_1011.policy.collect.collector,
+        env=collector_env_1011,
         policy=policy.collect_mode,
-        tb_logger=tb_logger,
-        exp_name=cfg_5m6m.exp_name
-    )
-    collector_8m9m = create_serial_collector(
-        cfg_8m9m.policy.collect.collector,
-        env=collector_env_8m9m,
+        tb_logger=tb_logger_1011,
+        exp_name=cfg_1011.exp_name
+    )    
+    collector_89 = create_serial_collector(
+        cfg_89.policy.collect.collector,
+        env=collector_env_89,
         policy=policy.collect_mode,
-        tb_logger=tb_logger,
-        exp_name=cfg_8m9m.exp_name
+        tb_logger=tb_logger_89,
+        exp_name=cfg_89.exp_name
     )
-    collector_10m11m = create_serial_collector(
-        cfg_10m11m.policy.collect.collector,
-        env=collector_env_10m11m,
+    collector_56 = create_serial_collector(
+        cfg_56.policy.collect.collector,
+        env=collector_env_56,
         policy=policy.collect_mode,
-        tb_logger=tb_logger,
-        exp_name=cfg_10m11m.exp_name
+        tb_logger=tb_logger_56,
+        exp_name=cfg_56.exp_name
     )
-    evaluator_5m6m = InteractionSerialMultiEnvEvaluator(
-        cfg_5m6m.policy.eval.evaluator, evaluator_env_5m6m, policy.eval_mode, tb_logger, exp_name=cfg_5m6m.exp_name
+    evaluator_1011 = InteractionSerialEvaluator(
+        cfg_1011.policy.eval.evaluator, evaluator_env_1011, policy.eval_mode, tb_logger_1011, exp_name=cfg_1011.exp_name
     )
-    evaluator_8m9m = InteractionSerialMultiEnvEvaluator(
-        cfg_8m9m.policy.eval.evaluator, evaluator_env_8m9m, policy.eval_mode, tb_logger, exp_name=cfg_8m9m.exp_name
+    evaluator_89 = InteractionSerialEvaluator(
+        cfg_89.policy.eval.evaluator, evaluator_env_89, policy.eval_mode, tb_logger_89, exp_name=cfg_89.exp_name
     )
-    evaluator_10m11m = InteractionSerialMultiEnvEvaluator(
-        cfg_10m11m.policy.eval.evaluator, evaluator_env_10m11m, policy.eval_mode, tb_logger,
-        exp_name=cfg_10m11m.exp_name
+    evaluator_56 = InteractionSerialEvaluator(
+        cfg_56.policy.eval.evaluator, evaluator_env_56, policy.eval_mode, tb_logger_56, exp_name=cfg_56.exp_name
     )
+    # commander is useless in ppo
     commander = BaseSerialCommander(
-        cfg_10m11m.policy.other.commander, learner, collector_10m11m, evaluator_10m11m, None, policy.command_mode
+        cfg_56.policy.other.commander, learner_56, collector_56, evaluator_56, None, policy.command_mode
     )
 
     # ==========
     # Main loop
     # ==========
     # Learner's before_run hook.
-    learner.call_hook('before_run')
-
-    # set target shape
-    target_agent_num = 10
-    target_action_shape = cfg_10m11m.policy.model.action_shape
-    target_agent_obs_shape = cfg_10m11m.policy.model.agent_obs_shape
-    target_global_obs_shape = cfg_10m11m.policy.model.global_obs_shape
+    learner_1011.call_hook('before_run')
+    learner_89.call_hook('before_run')
+    learner_56.call_hook('before_run')
 
     while True:
         collect_kwargs = commander.step()
         # Evaluate policy performance
-        if evaluator_5m6m.should_eval(learner.train_iter):
-            stop_5m6m, reward_5m6m = evaluator_5m6m.eval(learner.save_checkpoint, learner.train_iter,
-                                                         collector_5m6m.envstep)
-        if evaluator_8m9m.should_eval(learner.train_iter):
-            stop_8m9m, reward_8m9m = evaluator_8m9m.eval(learner.save_checkpoint, learner.train_iter,
-                                                         collector_8m9m.envstep)
-        if evaluator_10m11m.should_eval(learner.train_iter):
-            stop_10m11m, reward_10m11m = evaluator_10m11m.eval(learner.save_checkpoint, learner.train_iter,
-                                                               collector_10m11m.envstep)
-        if stop_5m6m and stop_8m9m and stop_10m11m:
+        if evaluator_1011.should_eval(learner_1011.train_iter):
+            stop_1011, _ = evaluator_1011.eval(learner_1011.save_checkpoint, learner_1011.train_iter, collector_1011.envstep)
+        if evaluator_89.should_eval(learner_89.train_iter):
+            stop_89, _ = evaluator_89.eval(learner_89.save_checkpoint, learner_89.train_iter, collector_89.envstep)
+        if evaluator_56.should_eval(learner_56.train_iter):
+            stop_56, _ = evaluator_56.eval(learner_56.save_checkpoint, learner_56.train_iter, collector_56.envstep)
+        if stop_1011 and stop_89 and stop_56:
             break
         # Collect data by default config n_sample/n_episode
-        new_data_5m6m = collector_5m6m.collect(train_iter=learner.train_iter, policy_kwargs=collect_kwargs)
-        new_data_8m9m = collector_8m9m.collect(train_iter=learner.train_iter, policy_kwargs=collect_kwargs)
-        new_data_10m11m = collector_10m11m.collect(train_iter=learner.train_iter, policy_kwargs=collect_kwargs)
-
-        def data_padding(ori_data):
-            action_shape = ori_data[0]['logit'].shape[1]
-            agent_num, agent_obs_shape = ori_data[0]['obs']['agent_state'].shape
-            global_obs_shape = ori_data[0]['obs']['global_state'].shape[1]
-            # each element in list
-            for i in range(len(ori_data)):
-                # pad the obs and next_obs
-                for obs_key in ['obs', 'next_obs']:
-                    ori_data[i][obs_key]['agent_state'] = nn.ConstantPad2d((0, target_agent_obs_shape-agent_obs_shape, 0, target_agent_num-agent_num), 0.)(ori_data[i][obs_key]['agent_state'])
-                    ori_data[i][obs_key]['global_state'] = nn.ConstantPad2d((0, target_global_obs_shape-global_obs_shape, 0, target_agent_num-agent_num), 0.)(ori_data[i][obs_key]['global_state'])
-                    ori_data[i][obs_key]['action_mask'] = nn.ConstantPad2d((0, target_action_shape-action_shape, 0, target_agent_num-agent_num), 0.)(ori_data[i][obs_key]['action_mask'])
-                # pad the action
-                ori_data[i]['action'] = nn.ConstantPad1d((0, target_agent_num-agent_num), 0.)(ori_data[i]['action'])
-                # pad the logit
-                ori_data[i]['logit'] = nn.ConstantPad2d((0, target_action_shape-action_shape, 0, target_agent_num-agent_num), 0.)(ori_data[i]['logit'])
-                # pad the value
-                ori_data[i]['value'] = nn.ConstantPad1d((0, target_agent_num-agent_num), 0.)(ori_data[i]['value'])
-                # pad the adv
-                ori_data[i]['adv'] = nn.ConstantPad1d((0, target_agent_num-agent_num), 0.)(ori_data[i]['adv'])
-            return ori_data
-
-        new_data_5m6m = data_padding(new_data_5m6m)
-        new_data_8m9m = data_padding(new_data_8m9m)
+        new_data_1011 = collector_1011.collect(train_iter=learner_1011.train_iter, policy_kwargs=collect_kwargs)
+        new_data_89 = collector_89.collect(train_iter=learner_89.train_iter, policy_kwargs=collect_kwargs)
+        new_data_56 = collector_56.collect(train_iter=learner_56.train_iter, policy_kwargs=collect_kwargs)
 
         # Learn policy from collected data
-        learner.train(new_data_5m6m, collector_5m6m.envstep)
-        learner.train(new_data_8m9m, collector_8m9m.envstep)
-        learner.train(new_data_10m11m, collector_10m11m.envstep)
-        if collector_10m11m.envstep >= max_env_step or learner.train_iter >= max_train_iter:
+        learner_1011.train(new_data_1011, collector_1011.envstep)
+        learner_89.train(new_data_89, collector_89.envstep)
+        learner_56.train(new_data_56, collector_56.envstep)
+        if collector_1011.envstep >= max_env_step or learner_1011.train_iter >= max_train_iter:
             break
 
     # Learner's after_run hook.
-    learner.call_hook('after_run')
+    learner_1011.call_hook('after_run')
+    learner_89.call_hook('after_run')
+    learner_56.call_hook('after_run')
     return policy
