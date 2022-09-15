@@ -59,9 +59,9 @@ class DiscreteHead(nn.Module):
         self.Q_1011 = block(hidden_size, output_size)
         self.Q_89 = block(hidden_size, output_size)
         self.Q_56 = block(hidden_size, output_size)
-        self.Q = [self.Q_1011, self.Q_89, self.Q_56]
+        self.Q = [self.Q_56, self.Q_89, self.Q_1011]
 
-    def forward(self, x: torch.Tensor) -> Dict:
+    def forward(self, x: torch.Tensor, map_info: torch.Tensor) -> Dict:
         """
         Overview:
             Use encoded embedding tensor to run MLP with ``DiscreteHead`` and return the prediction dictionary.
@@ -79,9 +79,16 @@ class DiscreteHead(nn.Module):
             >>> outputs = head(inputs)
             >>> assert isinstance(outputs, dict) and outputs['logit'].shape == torch.Size([4, 64])
         """
-        index = torch.argmax(x[0, 0, -3:])
         x = self.mlp(x)
-        logit = self.Q[-index](x)
+        if sum(map_info == map_info[0]) == len(map_info):
+            logit = self.Q[map_info[0]](x)
+        else:
+            # speed will be slow!
+            logit_list = []
+            # which head to use is decided by the map name (one-hot info in observation)
+            for i, index in enumerate(map_info):
+                logit_list.append(self.Q[-index](x[i:i+1]))
+            logit = torch.concat(logit_list, dim=0)
         return {'logit': logit}
 
 
@@ -931,12 +938,12 @@ class RegressionHead(nn.Module):
         self.last_1011 = nn.Linear(hidden_size, output_size)  # for convenience of special initialization
         self.last_89 = nn.Linear(hidden_size, output_size)  # for convenience of special initialization
         self.last_56 = nn.Linear(hidden_size, output_size)  # for convenience of special initialization
-        self.last = [self.last_1011, self.last_89, self.last_56]
+        self.last = [self.last_56, self.last_89, self.last_1011]
         self.final_tanh = final_tanh
         if self.final_tanh:
             self.tanh = nn.Tanh()
 
-    def forward(self, x: torch.Tensor) -> Dict:
+    def forward(self, x: torch.Tensor, map_info: torch.Tensor) -> Dict:
         """
         Overview:
             Use encoded embedding tensor to run MLP with ``RegressionHead`` and return the prediction dictionary.
@@ -955,10 +962,16 @@ class RegressionHead(nn.Module):
             >>> assert isinstance(outputs, dict)
             >>> assert outputs['pred'].shape == torch.Size([4, 64])
         """
-        # determine which head last to use
-        index = torch.argmax(x[0, 0, -3:])
         x = self.main(x)
-        x = self.last[-index](x)
+        # which head will be used is decided by the map_info
+        if sum(map_info == map_info[0]) == len(map_info):
+            x = self.last[map_info[0]][x]
+        else:
+            # if map in a batch is not consistant, it will be slow
+            x_list = []
+            for i, index in enumerate(map_info):
+                x_list.append(self.last[-index](x[i:i+1]))
+            x = torch.concat(x_list, dim=0)
         if self.final_tanh:
             x = self.tanh(x)
         if x.shape[-1] == 1 and len(x.shape) > 1:

@@ -80,22 +80,21 @@ class MAVAC(nn.Module):
         # We directly connect the Head after a Liner layer instead of using the 3-layer FCEncoder.
         # In SMAC task it can obviously improve the performance.
         # Users can change the model according to their own needs.
-        self.actor_encoder = nn.Identity()
-        self.critic_encoder = nn.Identity()
-        # Head Type
-        self.critic_head = nn.Sequential(
+        self.actor_encoder = nn.Sequential(
+            nn.Linear(agent_obs_shape, actor_head_hidden_size), activation,
+        )
+        self.critic_encoder = nn.Sequential(
             nn.Linear(global_obs_shape, critic_head_hidden_size), activation,
-            RegressionHead(
+        )
+
+        # Head Type
+        self.critic_head = RegressionHead(
                 critic_head_hidden_size, 1, critic_head_layer_num, activation=activation, norm_type=norm_type
-            )
         )
 
         actor_head_cls = DiscreteHead
-        self.actor_head = nn.Sequential(
-            nn.Linear(agent_obs_shape, actor_head_hidden_size), activation,
-            actor_head_cls(
+        self.actor_head = actor_head_cls(
                 actor_head_hidden_size, action_shape, actor_head_layer_num, activation=activation, norm_type=norm_type
-            )
         )
         # must use list, not nn.ModuleList
         self.actor = [self.actor_encoder, self.actor_head]
@@ -152,6 +151,8 @@ class MAVAC(nn.Module):
 
         """
         assert mode in self.mode, "not support forward mode: {}/{}".format(mode, self.mode)
+        self.map_info = torch.argmax(inputs['agent_state'][:, 0, -3:], dim=-1)
+        assert self.map_info.dim() == 1, self.map_info.dim()
         return getattr(self, mode)(inputs)
 
     def compute_actor(self, x: torch.Tensor) -> Dict:
@@ -180,9 +181,8 @@ class MAVAC(nn.Module):
         """
         action_mask = x['action_mask']
         x = x['agent_state']
-
         x = self.actor_encoder(x)
-        x = self.actor_head(x)
+        x = self.actor_head(x, self.map_info)
         logit = x['logit']
         logit[action_mask == 0.0] = -99999999
         return {'logit': logit}
@@ -214,7 +214,7 @@ class MAVAC(nn.Module):
         """
 
         x = self.critic_encoder(x['global_state'])
-        x = self.critic_head(x)
+        x = self.critic_head(x, self.map_info)
         return {'value': x['pred']}
 
     def compute_actor_critic(self, x: Dict) -> Dict:
