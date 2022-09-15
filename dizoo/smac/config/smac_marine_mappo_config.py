@@ -54,7 +54,6 @@ main_config = dict(
             # (bool) Whether to use multi gpu
             multi_gpu=False,
             epoch_per_collect=5,
-            # terrible modification!
             batch_size=3000,
             learning_rate=5e-4,
             # ==============================================================
