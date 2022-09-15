@@ -965,7 +965,7 @@ class RegressionHead(nn.Module):
         x = self.main(x)
         # which head will be used is decided by the map_info
         if sum(map_info == map_info[0]) == len(map_info):
-            x = self.last[map_info[0]][x]
+            x = self.last[map_info[0]](x)
         else:
             # if map in a batch is not consistant, it will be slow
             x_list = []
