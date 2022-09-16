@@ -88,7 +88,7 @@ class DiscreteHead(nn.Module):
             # which head to use is decided by the map name (one-hot info in observation)
             for i, index in enumerate(map_info):
                 logit_list.append(self.Q[-index](x[i:i+1]))
-            logit = torch.concat(logit_list, dim=0)
+            logit = torch.cat(logit_list, dim=0)
         return {'logit': logit}
 
 
@@ -971,7 +971,7 @@ class RegressionHead(nn.Module):
             x_list = []
             for i, index in enumerate(map_info):
                 x_list.append(self.last[-index](x[i:i+1]))
-            x = torch.concat(x_list, dim=0)
+            x = torch.cat(x_list, dim=0)
         if self.final_tanh:
             x = self.tanh(x)
         if x.shape[-1] == 1 and len(x.shape) > 1:
