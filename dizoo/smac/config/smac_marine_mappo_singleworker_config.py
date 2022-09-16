@@ -1,8 +1,8 @@
 from easydict import EasyDict
 
 agent_num = 27
-collector_env_num = 4
-evaluator_env_num = 4
+collector_env_num = 6
+evaluator_env_num = 6
 special_global_state = True
 
 main_config = dict(
@@ -54,7 +54,7 @@ main_config = dict(
             # (bool) Whether to use multi gpu
             multi_gpu=False,
             epoch_per_collect=10,
-            batch_size=3200,
+            batch_size=3000,
             learning_rate=5e-4,
             # ==============================================================
             # The following configs is algorithm-specific
@@ -73,7 +73,7 @@ main_config = dict(
             grad_clip_value=10,
             ignore_done=False,
         ),
-        collect=dict(env_num=collector_env_num, n_sample=3200),
+        collect=dict(env_num=collector_env_num, n_sample=3000),
         eval=dict(
             evaluator=dict(
                 eval_freq=100,
@@ -96,11 +96,11 @@ create_config = EasyDict(create_config)
 
 if __name__ == '__main__':
 
-    from ding.entry import serial_pipeline_marine_onpolicy
+    from ding.entry import serial_pipeline_marine_onpolicy_singleworker
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--seed', '-s', type=int, default=0)
     args = parser.parse_args()
     seed = args.seed
-    main_config.exp_name = 'smac_marine_mappo_seed' + str(seed)
-    serial_pipeline_marine_onpolicy((main_config, create_config), seed=seed, max_env_step=int(1e7))
+    main_config.exp_name = 'smac_marine_mappo_singleworker_seed' + str(seed)
+    serial_pipeline_marine_onpolicy_singleworker((main_config, create_config), seed=seed, max_env_step=int(1e7))

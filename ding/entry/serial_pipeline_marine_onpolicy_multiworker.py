@@ -15,7 +15,7 @@ from ding.reward_model import create_reward_model
 from ding.utils import set_pkg_seed
 
 
-def serial_pipeline_marine_onpolicy(
+def serial_pipeline_marine_onpolicy_multiworker(
         input_cfg: Union[str, Tuple[dict, dict]],
         seed: int = 0,
         env_setting: Optional[List[Any]] = None,
