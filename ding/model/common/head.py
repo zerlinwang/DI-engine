@@ -59,7 +59,7 @@ class DiscreteHead(nn.Module):
         self.Q_1011 = block(hidden_size, output_size)
         self.Q_89 = block(hidden_size, output_size)
         self.Q_56 = block(hidden_size, output_size)
-        self.Q = [self.Q_56, self.Q_89, self.Q_1011]
+        self.Q = nn.ModuleList([self.Q_56, self.Q_89, self.Q_1011])
 
     def forward(self, x: torch.Tensor, map_info: torch.Tensor) -> Dict:
         """
@@ -938,7 +938,7 @@ class RegressionHead(nn.Module):
         self.last_1011 = nn.Linear(hidden_size, output_size)  # for convenience of special initialization
         self.last_89 = nn.Linear(hidden_size, output_size)  # for convenience of special initialization
         self.last_56 = nn.Linear(hidden_size, output_size)  # for convenience of special initialization
-        self.last = [self.last_56, self.last_89, self.last_1011]
+        self.last = nn.ModuleList([self.last_56, self.last_89, self.last_1011])
         self.final_tanh = final_tanh
         if self.final_tanh:
             self.tanh = nn.Tanh()
