@@ -87,7 +87,7 @@ class DiscreteHead(nn.Module):
             logit_list = []
             # which head to use is decided by the map name (one-hot info in observation)
             for i, index in enumerate(map_info):
-                logit_list.append(self.Q[-index](x[i:i+1]))
+                logit_list.append(self.Q[index](x[i:i+1]))
             logit = torch.cat(logit_list, dim=0)
         return {'logit': logit}
 
@@ -970,7 +970,7 @@ class RegressionHead(nn.Module):
             # if map in a batch is not consistant, it will be slow
             x_list = []
             for i, index in enumerate(map_info):
-                x_list.append(self.last[-index](x[i:i+1]))
+                x_list.append(self.last[index](x[i:i+1]))
             x = torch.cat(x_list, dim=0)
         if self.final_tanh:
             x = self.tanh(x)
