@@ -193,13 +193,13 @@ def serial_pipeline_marine_onpolicy_singlelearner(
     # else:
     #     cfg, create_cfg = deepcopy(input_cfg)
     cfg_1011, create_cfg_1011 = deepcopy(input_cfg)
-    cfg_1011.exp_name = 'marine_multihead_singlelearner_10m11m_mappo_seed0'
+    cfg_1011.exp_name = 'marine_multihead_singlelearner_10m11m_mappo_seed'+str(seed)
     cfg_1011.env.map_name = '10m_vs_11m'
     cfg_89, create_cfg_89 = deepcopy(input_cfg)
-    cfg_89.exp_name = 'marine_multihead_singlelearner_8m9m_mappo_seed0'
+    cfg_89.exp_name = 'marine_multihead_singlelearner_8m9m_mappo_seed'+str(seed)
     cfg_89.env.map_name = '8m_vs_9m'
     cfg_56, create_cfg_56 = deepcopy(input_cfg)
-    cfg_56.exp_name = 'marine_multihead_singlelearner_5m6m_mappo_seed0'
+    cfg_56.exp_name = 'marine_multihead_singlelearner_5m6m_mappo_seed'+str(seed)
     cfg_56.env.map_name = '5m_vs_6m'
     create_cfg_1011.policy.type = create_cfg_1011.policy.type + '_command'
     create_cfg_89.policy.type = create_cfg_89.policy.type + '_command'
