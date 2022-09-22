@@ -11,6 +11,49 @@ from ding.rl_utils import beta_function_map
 from ding.utils import lists_to_dicts, SequenceType
 
 
+class ResidualBlock(nn.Module):
+    """
+        Overview:
+            The ``ResidualBlock`` is used to be a deeper Linear Layer
+        Interfaces:
+            ``__init__``, ``forward``.
+    """
+    def __init__(
+        self,
+        hidden_size: int,
+        output_size: int,
+    ) -> None:
+        r"""
+        Overview:
+            Init the Residual Block
+        Arguments:
+            - hidden_size (:obj:`int`): The ``hidden_size`` of the MLP connected to ``DiscreteHead``.
+            - output_size (:obj:`int`): The number of outputs.
+        """
+        super(ResidualBlock, self).__init__()
+        self.linear = nn.Sequential(
+            nn.Linear(hidden_size, hidden_size),
+            nn.ReLU,
+            nn.Linear(hidden_size, hidden_size),
+        )
+        self.head = nn.Linear(hidden_size, output_size)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        r"""
+        Overview:
+            Return the residual block output
+        Arguments:
+            - x (:obj:`torch.Tensor`): the input tensor
+        Returns:
+            - x(:obj:`torch.Tensor`): the resblock output tensor
+        """
+        residual = x
+        x = self.linear(x)
+        x = F.relu(x + residual)
+        x = self.head(x)
+        return x
+
+
 class DiscreteHead(nn.Module):
     """
         Overview:
@@ -56,9 +99,9 @@ class DiscreteHead(nn.Module):
                 activation=activation,
                 norm_type=norm_type
         )
-        self.Q_1011 = block(hidden_size, output_size)
-        self.Q_89 = block(hidden_size, output_size)
-        self.Q_56 = block(hidden_size, output_size)
+        self.Q_1011 = ResidualBlock(hidden_size, output_size)
+        self.Q_89 = ResidualBlock(hidden_size, output_size)
+        self.Q_56 = ResidualBlock(hidden_size, output_size)
         self.Q = nn.ModuleList([self.Q_56, self.Q_89, self.Q_1011])
 
     def forward(self, x: torch.Tensor, map_info: torch.Tensor) -> Dict:
@@ -935,9 +978,9 @@ class RegressionHead(nn.Module):
         """
         super(RegressionHead, self).__init__()
         self.main = MLP(hidden_size, hidden_size, hidden_size, layer_num, activation=activation, norm_type=norm_type)
-        self.last_1011 = nn.Linear(hidden_size, output_size)  # for convenience of special initialization
-        self.last_89 = nn.Linear(hidden_size, output_size)  # for convenience of special initialization
-        self.last_56 = nn.Linear(hidden_size, output_size)  # for convenience of special initialization
+        self.last_1011 = ResidualBlock(hidden_size, output_size)  # for convenience of special initialization
+        self.last_89 = ResidualBlock(hidden_size, output_size)  # for convenience of special initialization
+        self.last_56 = ResidualBlock(hidden_size, output_size)  # for convenience of special initialization
         self.last = nn.ModuleList([self.last_56, self.last_89, self.last_1011])
         self.final_tanh = final_tanh
         if self.final_tanh:
