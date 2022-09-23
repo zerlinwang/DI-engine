@@ -33,7 +33,7 @@ class ResidualBlock(nn.Module):
         super(ResidualBlock, self).__init__()
         self.linear = nn.Sequential(
             nn.Linear(hidden_size, hidden_size),
-            nn.ReLU,
+            nn.ReLU(),
             nn.Linear(hidden_size, hidden_size),
         )
         self.head = nn.Linear(hidden_size, output_size)
