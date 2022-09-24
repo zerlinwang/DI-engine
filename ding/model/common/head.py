@@ -34,9 +34,9 @@ class ResidualBlock(nn.Module):
         self.linear = nn.Sequential(
             nn.Linear(hidden_size, hidden_size*2),
             nn.ReLU(),
-            nn.Linear(hidden_size*2, hidden_size*2),
+            nn.Linear(hidden_size*2, hidden_size),
         )
-        self.head = nn.Linear(hidden_size*2, output_size)
+        self.head = nn.Linear(hidden_size, output_size)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         r"""
