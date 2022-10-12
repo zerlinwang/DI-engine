@@ -21,7 +21,6 @@ class ResidualBlock(nn.Module):
     def __init__(
         self,
         hidden_size: int,
-        output_size: int,
     ) -> None:
         r"""
         Overview:
@@ -32,10 +31,50 @@ class ResidualBlock(nn.Module):
         """
         super(ResidualBlock, self).__init__()
         self.linear = nn.Sequential(
-            nn.Linear(hidden_size, hidden_size*2),
+            nn.Linear(hidden_size, hidden_size),
             nn.ReLU(),
-            nn.Linear(hidden_size*2, hidden_size),
+            nn.Linear(hidden_size, hidden_size),
         )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        r"""
+        Overview:
+            Return the residual block output
+        Arguments:
+            - x (:obj:`torch.Tensor`): the input tensor
+        Returns:
+            - x(:obj:`torch.Tensor`): the resblock output tensor
+        """
+        residule = self.linear(x)
+        return F.relu(x + residule)
+
+class ResNet(nn.Module):
+    """
+        Overview:
+            The ``ResNet`` is used to be a deeper Linear Layer
+        Interfaces:
+            ``__init__``, ``forward``.
+    """
+    def __init__(
+        self,
+        n_block,
+        hidden_size: int,
+        output_size: int,
+    ) -> None:
+        r"""
+        Overview:
+            Init the Residual Block
+        Arguments:
+            - hidden_size (:obj:`int`): The ``hidden_size`` of the MLP connected to ``DiscreteHead``.
+            - output_size (:obj:`int`): The number of outputs.
+        """
+        super(ResNet, self).__init__()
+        self.stage = nn.ModuleList()
+        for n in range(n_block):
+            self.stage.append(
+                ResidualBlock(hidden_size)
+            )
+        self.stage = nn.Sequential(*self.stage)
         self.head = nn.Linear(hidden_size, output_size)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -47,12 +86,9 @@ class ResidualBlock(nn.Module):
         Returns:
             - x(:obj:`torch.Tensor`): the resblock output tensor
         """
-        residual = x
-        x = self.linear(x)
-        x = F.relu(x + residual)
+        x = self.stage(x)
         x = self.head(x)
         return x
-
 
 class DiscreteHead(nn.Module):
     """
@@ -90,18 +126,18 @@ class DiscreteHead(nn.Module):
         super(DiscreteHead, self).__init__()
         layer = NoiseLinearLayer if noise else nn.Linear
         block = noise_block if noise else fc_block
-        self.mlp = MLP(
-                hidden_size,
-                hidden_size,
-                hidden_size,
-                layer_num,
-                layer_fn=layer,
-                activation=activation,
-                norm_type=norm_type
-        )
-        self.Q_1011 = ResidualBlock(hidden_size, output_size)
-        self.Q_89 = ResidualBlock(hidden_size, output_size)
-        self.Q_56 = ResidualBlock(hidden_size, output_size)
+        # self.mlp = MLP(
+        #         hidden_size,
+        #         hidden_size,
+        #         hidden_size,
+        #         layer_num,
+        #         layer_fn=layer,
+        #         activation=activation,
+        #         norm_type=norm_type
+        # )
+        self.Q_1011 = ResNet(3, hidden_size, output_size)
+        self.Q_89 = ResNet(3, hidden_size, output_size)
+        self.Q_56 = ResNet(3, hidden_size, output_size)
         self.Q = nn.ModuleList([self.Q_56, self.Q_89, self.Q_1011])
 
     def forward(self, x: torch.Tensor, map_info: torch.Tensor) -> Dict:
@@ -122,7 +158,7 @@ class DiscreteHead(nn.Module):
             >>> outputs = head(inputs)
             >>> assert isinstance(outputs, dict) and outputs['logit'].shape == torch.Size([4, 64])
         """
-        x = self.mlp(x)
+        # x = self.mlp(x)
         if sum(map_info == map_info[0]) == len(map_info):
             logit = self.Q[map_info[0]](x)
         else:
@@ -977,10 +1013,10 @@ class RegressionHead(nn.Module):
                 for more details. Default ``None``.
         """
         super(RegressionHead, self).__init__()
-        self.main = MLP(hidden_size, hidden_size, hidden_size, layer_num, activation=activation, norm_type=norm_type)
-        self.last_1011 = ResidualBlock(hidden_size, output_size)  # for convenience of special initialization
-        self.last_89 = ResidualBlock(hidden_size, output_size)  # for convenience of special initialization
-        self.last_56 = ResidualBlock(hidden_size, output_size)  # for convenience of special initialization
+        # self.main = MLP(hidden_size, hidden_size, hidden_size, layer_num, activation=activation, norm_type=norm_type)
+        self.last_1011 = ResNet(2, hidden_size, output_size)  # for convenience of special initialization
+        self.last_89 = ResNet(2, hidden_size, output_size)  # for convenience of special initialization
+        self.last_56 = ResNet(2, hidden_size, output_size)  # for convenience of special initialization
         self.last = nn.ModuleList([self.last_56, self.last_89, self.last_1011])
         self.final_tanh = final_tanh
         if self.final_tanh:
@@ -1005,7 +1041,7 @@ class RegressionHead(nn.Module):
             >>> assert isinstance(outputs, dict)
             >>> assert outputs['pred'].shape == torch.Size([4, 64])
         """
-        x = self.main(x)
+        # x = self.main(x)
         # which head will be used is decided by the map_info
         if sum(map_info == map_info[0]) == len(map_info):
             x = self.last[map_info[0]](x)
