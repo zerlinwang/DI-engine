@@ -164,6 +164,10 @@ def serial_pipeline_marine_onpolicy_singlelearner_plr(
             new_data = collector_56.collect(train_iter=learner.train_iter, policy_kwargs=collect_kwargs)
         else:
             raise
+        seed_prob = level_sampler._sample_weights()
+        tb_logger_1011.add_scalar("seeds/10m11m", seed_prob[0], global_step=learner.train_iter)
+        tb_logger_1011.add_scalar("seeds/8m9m", seed_prob[1], global_step=learner.train_iter)
+        tb_logger_1011.add_scalar("seeds/5m6m", seed_prob[2], global_step=learner.train_iter)
         # Learn policy from collected data
         learner.train(new_data, collector_1011.envstep)
         stacked_data = default_preprocess_learn(new_data, ignore_done=cfg_1011.policy.learn.ignore_done, use_nstep=False)
