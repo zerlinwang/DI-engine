@@ -15,6 +15,7 @@ class ResidualBlock(nn.Module):
     """
         Overview:
             The ``ResidualBlock`` is used to be a deeper Linear Layer
+            ref: https://github.com/opendilab/DI-engine/blob/main/ding/torch_utils/network/res_block.py#L70
         Interfaces:
             ``__init__``, ``forward``.
     """
@@ -45,8 +46,8 @@ class ResidualBlock(nn.Module):
         Returns:
             - x(:obj:`torch.Tensor`): the resblock output tensor
         """
-        residule = self.linear(x)
-        return F.relu(x + residule)
+        identity = self.linear(x)
+        return F.relu(x + identity)
 
 class ResNet(nn.Module):
     """
