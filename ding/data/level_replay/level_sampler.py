@@ -165,8 +165,9 @@ class LevelSampler():
         return td_errors.abs().mean().item()
 
     def _update_with_rollouts(self, train_data: dict, num_actors: int, all_total_steps: int, score_function):
+        num_agent, num_action = train_data['logit'].shape[-2:]
         level_seeds = train_data['seed'].reshape(num_actors, int(all_total_steps / num_actors)).transpose(0, 1)
-        policy_logits = train_data['logit'].reshape(num_actors, int(all_total_steps / num_actors), -1).transpose(0, 1)
+        policy_logits = train_data['logit'].reshape(num_actors, int(all_total_steps / num_actors), num_agent, num_action ).transpose(0, 1)
         done = train_data['done'].reshape(num_actors, int(all_total_steps / num_actors)).transpose(0, 1)
         total_steps, num_actors = policy_logits.shape[:2]
         num_decisions = len(policy_logits)
@@ -186,7 +187,7 @@ class LevelSampler():
                 seed_idx_t = self.seed2index[seed_t]
 
                 score_function_kwargs = {}
-                episode_logits = policy_logits[start_t:t, actor_index]
+                episode_logits = policy_logits[start_t:t, actor_index].reshape(-1, num_action)
                 score_function_kwargs['episode_logits'] = torch.log_softmax(episode_logits, -1)
 
                 if self.strategy in ['gae', 'value_l1', 'one_step_td_error']:
@@ -209,7 +210,7 @@ class LevelSampler():
                 seed_idx_t = self.seed2index[seed_t]
 
                 score_function_kwargs = {}
-                episode_logits = policy_logits[start_t:, actor_index]
+                episode_logits = policy_logits[start_t:, actor_index].reshape(-1, num_action)
                 score_function_kwargs['episode_logits'] = torch.log_softmax(episode_logits, -1)
 
                 if self.strategy in ['gae', 'value_l1', 'one_step_td_error']:
