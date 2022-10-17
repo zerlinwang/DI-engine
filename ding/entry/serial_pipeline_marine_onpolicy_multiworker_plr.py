@@ -148,11 +148,11 @@ def serial_pipeline_marine_onpolicy_singlelearner_plr(
         collect_kwargs = commander.step()
         # Evaluate policy performance
         if evaluator_1011.should_eval(learner.train_iter):
-            stop_1011, _ = evaluator_1011.eval(learner.save_checkpoint, learner.train_iter, collector_1011.envstep)
+            stop_1011, _ = evaluator_1011.eval(learner.save_checkpoint, learner.train_iter, collector_1011.envstep+collector_89.envstep+collector_56.envstep)
         if evaluator_89.should_eval(learner.train_iter):
-            stop_89, _ = evaluator_89.eval(learner.save_checkpoint, learner.train_iter, collector_89.envstep)
+            stop_89, _ = evaluator_89.eval(learner.save_checkpoint, learner.train_iter, collector_1011.envstep+collector_89.envstep+collector_56.envstep)
         if evaluator_56.should_eval(learner.train_iter):
-            stop_56, _ = evaluator_56.eval(learner.save_checkpoint, learner.train_iter, collector_56.envstep)
+            stop_56, _ = evaluator_56.eval(learner.save_checkpoint, learner.train_iter, collector_1011.envstep+collector_89.envstep+collector_56.envstep)
         if stop_1011 and stop_89 and stop_56:
             break
         # Collect data by default config n_sample/n_episode
@@ -169,13 +169,13 @@ def serial_pipeline_marine_onpolicy_singlelearner_plr(
         tb_logger_1011.add_scalar("seeds/8m9m", seed_prob[1], global_step=learner.train_iter)
         tb_logger_1011.add_scalar("seeds/5m6m", seed_prob[2], global_step=learner.train_iter)
         # Learn policy from collected data
-        learner.train(new_data, collector_1011.envstep)
+        learner.train(new_data, collector_1011.envstep+collector_89.envstep+collector_56.envstep)
         stacked_data = default_preprocess_learn(new_data, ignore_done=cfg_1011.policy.learn.ignore_done, use_nstep=False)
         stacked_data['seed'] = torch.ones((cfg_1011.policy.collect.n_sample), dtype=torch.float32) * seed
         level_sampler.update_with_rollouts(stacked_data, collector_env_num)
         seed = int(level_sampler.sample())
 
-        if (collector_1011.envstep +  collector_89.envstep + collector_56.envstep) >= max_env_step or learner.train_iter >= max_train_iter:
+        if (collector_1011.envstep+collector_89.envstep+collector_56.envstep) >= max_env_step or learner.train_iter >= max_train_iter:
             break
 
     # Learner's after_run hook.
