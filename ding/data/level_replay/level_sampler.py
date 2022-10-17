@@ -193,8 +193,8 @@ class LevelSampler():
                 if self.strategy in ['gae', 'value_l1', 'one_step_td_error']:
                     rewards = train_data['reward'].reshape(num_actors,
                                                            int(all_total_steps / num_actors)).transpose(0, 1)
-                    adv = train_data['adv'].reshape(num_actors, int(all_total_steps / num_actors)).transpose(0, 1)
-                    value = train_data['value'].reshape(num_actors, int(all_total_steps / num_actors)).transpose(0, 1)
+                    adv = train_data['adv'].reshape(num_actors, -1).transpose(0, 1)
+                    value = train_data['value'].reshape(num_actors, -1).transpose(0, 1)
                     score_function_kwargs['adv'] = adv[start_t:t, actor_index]
                     score_function_kwargs['rewards'] = rewards[start_t:t, actor_index]
                     score_function_kwargs['value'] = value[start_t:t, actor_index]
@@ -216,8 +216,8 @@ class LevelSampler():
                 if self.strategy in ['gae', 'value_l1', 'one_step_td_error']:
                     rewards = train_data['reward'].reshape(num_actors,
                                                            int(all_total_steps / num_actors)).transpose(0, 1)
-                    adv = train_data['adv'].reshape(num_actors, int(all_total_steps / num_actors)).transpose(0, 1)
-                    value = train_data['value'].reshape(num_actors, int(all_total_steps / num_actors)).transpose(0, 1)
+                    adv = train_data['adv'].reshape(num_actors, -1).transpose(0, 1)
+                    value = train_data['value'].reshape(num_actors, -1).transpose(0, 1)
                     score_function_kwargs['adv'] = adv[start_t:, actor_index]
                     score_function_kwargs['rewards'] = rewards[start_t:, actor_index]
                     score_function_kwargs['value'] = value[start_t:, actor_index]
