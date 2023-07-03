@@ -298,7 +298,6 @@
 <span class="kn">import</span> <span class="nn">platform</span>
 <span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">unique</span>
 
-<span class="kn">from</span> <span class="nn">readerwriterlock</span> <span class="kn">import</span> <span class="n">rwlock</span>
 <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
 <span class="k">if</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">!=</span> <span class="s1">&#39;windows&#39;</span><span class="p">:</span>
     <span class="kn">import</span> <span class="nn">fcntl</span>
@@ -308,7 +307,7 @@
 
 <span class="nd">@unique</span>
 <span class="k">class</span> <span class="nc">LockContextType</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Enum to express the type of the lock</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">THREAD_LOCK</span> <span class="o">=</span> <span class="mi">1</span>
@@ -322,7 +321,7 @@
 
 
 <div class="viewcode-block" id="LockContext"><a class="viewcode-back" href="../../../05_api_doc/utils/lock_helper.html#ding.utils.lock_helper.LockContext">[docs]</a><span class="k">class</span> <span class="nc">LockContext</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Overview:</span>
 <span class="sd">        Generate a LockContext in order to make sure the thread safety.</span>
 
@@ -335,7 +334,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="LockContext.__init__"><a class="viewcode-back" href="../../../05_api_doc/utils/lock_helper.html#ding.utils.lock_helper.LockContext.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">type_</span><span class="p">:</span> <span class="n">LockContextType</span> <span class="o">=</span> <span class="n">LockContextType</span><span class="o">.</span><span class="n">THREAD_LOCK</span><span class="p">):</span>
-        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
 <span class="sd">            Init the lock according to given type</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -348,14 +347,14 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">lock</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
 
 <div class="viewcode-block" id="LockContext.__enter__"><a class="viewcode-back" href="../../../05_api_doc/utils/lock_helper.html#ding.utils.lock_helper.LockContext.__enter__">[docs]</a>    <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
 <span class="sd">            Entering the context and acquire lock</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lock</span><span class="o">.</span><span class="n">acquire</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="LockContext.__exit__"><a class="viewcode-back" href="../../../05_api_doc/utils/lock_helper.html#ding.utils.lock_helper.LockContext.__exit__">[docs]</a>    <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
 <span class="sd">            Quiting the context and release lock</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -366,7 +365,7 @@
 
 
 <span class="k">def</span> <span class="nf">get_rw_file_lock</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">op</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-    <span class="sa">r</span><span class="sd">&#39;&#39;&#39;</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">    Overview:</span>
 <span class="sd">        Get generated file lock with name and operator</span>
 <span class="sd">    Arguments:</span>
@@ -376,6 +375,13 @@
 <span class="sd">        - (:obj:`RWLockFairD`) Generated rwlock</span>
 <span class="sd">    &#39;&#39;&#39;</span>
     <span class="k">assert</span> <span class="n">op</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;read&#39;</span><span class="p">,</span> <span class="s1">&#39;write&#39;</span><span class="p">]</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">readerwriterlock</span> <span class="kn">import</span> <span class="n">rwlock</span>
+    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">sys</span>
+        <span class="kn">from</span> <span class="nn">ditk</span> <span class="kn">import</span> <span class="n">logging</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Please install readerwriterlock first, such as `pip3 install readerwriterlock`.&quot;</span><span class="p">)</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">rw_lock_mapping</span><span class="p">:</span>
         <span class="n">rw_lock_mapping</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">rwlock</span><span class="o">.</span><span class="n">RWLockFairD</span><span class="p">()</span>
     <span class="n">lock</span> <span class="o">=</span> <span class="n">rw_lock_mapping</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>

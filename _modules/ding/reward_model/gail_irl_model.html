@@ -297,7 +297,6 @@
 <span class="kn">import</span> <span class="nn">random</span>
 <span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Iterable</span>
 <span class="kn">from</span> <span class="nn">easydict</span> <span class="kn">import</span> <span class="n">EasyDict</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
@@ -310,7 +309,7 @@
 
 
 <span class="k">def</span> <span class="nf">concat_state_action_pairs</span><span class="p">(</span><span class="n">iterator</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Overview:</span>
 <span class="sd">        Concatenate state and action pairs from input.</span>
 <span class="sd">    Arguments:</span>
@@ -329,7 +328,7 @@
 
 
 <span class="k">def</span> <span class="nf">concat_state_action_pairs_one_hot</span><span class="p">(</span><span class="n">iterator</span><span class="p">,</span> <span class="n">action_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Overview:</span>
 <span class="sd">        Concatenate state and action pairs from input. Action values are one-hot encoded</span>
 <span class="sd">    Arguments:</span>
@@ -400,46 +399,62 @@
 
 <div class="viewcode-block" id="GailRewardModel"><a class="viewcode-back" href="../../../12_policies/gail.html#ding.reward_model.gail_irl_model.GailRewardModel">[docs]</a><span class="nd">@REWARD_MODEL_REGISTRY</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s1">&#39;gail&#39;</span><span class="p">)</span>
 <span class="k">class</span> <span class="nc">GailRewardModel</span><span class="p">(</span><span class="n">BaseRewardModel</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Overview:</span>
 <span class="sd">        The Gail reward model class (https://arxiv.org/abs/1606.03476)</span>
 <span class="sd">    Interface:</span>
 <span class="sd">        ``estimate``, ``train``, ``load_expert_data``, ``collect_data``, ``clear_date``, \</span>
 <span class="sd">            ``__init__``,  ``state_dict``, ``load_state_dict``, ``learn``</span>
 <span class="sd">    Config:</span>
-<span class="sd">           == ====================  ========   =============  ================================= =======================</span>
-<span class="sd">           ID Symbol                Type       Default Value  Description                       Other(Shape)</span>
-<span class="sd">           == ====================  ========   =============  ================================= =======================</span>
-<span class="sd">           1  ``type``              str        gail           | RL policy register name, refer  | this arg is optional,</span>
-<span class="sd">                                                              | to registry ``POLICY_REGISTRY`` | a placeholder</span>
-<span class="sd">           2  | ``expert_data_``    str        expert_data.   | Path to the expert dataset      | Should be a &#39;.pkl&#39;</span>
-<span class="sd">              | ``path``                       .pkl           |                                 | file</span>
-<span class="sd">           3  | ``update_per_``     int        100            | Number of updates per collect   |</span>
-<span class="sd">              | ``collect``                                   |                                 |</span>
-<span class="sd">           4  | ``batch_size``      int        64             | Training batch size             |</span>
-<span class="sd">           5  | ``input_size``      int                       | Size of the input:              |</span>
-<span class="sd">              |                                               | obs_dim + act_dim               |</span>
-<span class="sd">           6  | ``target_new_``     int        64             | Collect steps per iteration     |</span>
-<span class="sd">              | ``data_count``                                |                                 |</span>
-<span class="sd">           7  | ``hidden_size``     int        128            | Linear model hidden size        |</span>
-<span class="sd">           8  | ``collect_count``   int        100000         | Expert dataset size             | One entry is a (s,a)</span>
-<span class="sd">              |                                               |                                 | tuple</span>
-<span class="sd">           == ====================  ========   =============  ================================= =======================</span>
-
-<span class="sd">       &quot;&quot;&quot;</span>
+<span class="sd">        == ====================  ========   =============  =================================== =======================</span>
+<span class="sd">        ID Symbol                Type       Default Value  Description                         Other(Shape)</span>
+<span class="sd">        == ====================  ========   =============  =================================== =======================</span>
+<span class="sd">        1  ``type``              str        gail           | RL policy register name, refer    | this arg is optional,</span>
+<span class="sd">                                                           | to registry ``POLICY_REGISTRY``   | a placeholder</span>
+<span class="sd">        2  | ``expert_data_``    str        expert_data.   | Path to the expert dataset        | Should be a &#39;.pkl&#39;</span>
+<span class="sd">           | ``path``                       .pkl           |                                   | file</span>
+<span class="sd">        3  | ``learning_rate``   float      0.001          | The step size of gradient descent |</span>
+<span class="sd">        4  | ``update_per_``     int        100            | Number of updates per collect     |</span>
+<span class="sd">           | ``collect``                                   |                                   |</span>
+<span class="sd">        5  | ``batch_size``      int        64             | Training batch size               |</span>
+<span class="sd">        6  | ``input_size``      int                       | Size of the input:                |</span>
+<span class="sd">           |                                               | obs_dim + act_dim                 |</span>
+<span class="sd">        7  | ``target_new_``     int        64             | Collect steps per iteration       |</span>
+<span class="sd">           | ``data_count``                                |                                   |</span>
+<span class="sd">        8  | ``hidden_size``     int        128            | Linear model hidden size          |</span>
+<span class="sd">        9  | ``collect_count``   int        100000         | Expert dataset size               | One entry is a (s,a)</span>
+<span class="sd">           |                                               |                                   | tuple</span>
+<span class="sd">        10 | ``clear_buffer_``   int        1              | clear buffer per fixed iters      | make sure replay</span>
+<span class="sd">           | ``per_iters``                                                                     | buffer&#39;s data count</span>
+<span class="sd">           |                                                                                   | isn&#39;t too few.</span>
+<span class="sd">           |                                                                                   | (code work in entry)</span>
+<span class="sd">        == ====================  ========   =============  =================================== =======================</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">config</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+        <span class="c1"># (str) RL policy register name, refer to registry ``POLICY_REGISTRY``.</span>
         <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;gail&#39;</span><span class="p">,</span>
+        <span class="c1"># (float) The step size of gradient descent.</span>
         <span class="n">learning_rate</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span>
+        <span class="c1"># (int) How many updates(iterations) to train after collector&#39;s one collection.</span>
+        <span class="c1"># Bigger &quot;update_per_collect&quot; means bigger off-policy.</span>
+        <span class="c1"># collect data -&gt; update policy-&gt; collect data -&gt; ...</span>
         <span class="n">update_per_collect</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+        <span class="c1"># (int) How many samples in a training batch.</span>
         <span class="n">batch_size</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span>
+        <span class="c1"># (int) Size of the input: obs_dim + act_dim.</span>
         <span class="n">input_size</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+        <span class="c1"># (int) Collect steps per iteration.</span>
         <span class="n">target_new_data_count</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span>
+        <span class="c1"># (int) Linear model hidden size.</span>
         <span class="n">hidden_size</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span>
+        <span class="c1"># (int) Expert dataset size.</span>
         <span class="n">collect_count</span><span class="o">=</span><span class="mi">100000</span><span class="p">,</span>
+        <span class="c1"># (int) Clear buffer per fixed iters.</span>
+        <span class="n">clear_buffer_per_iters</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">EasyDict</span><span class="p">,</span> <span class="n">device</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">tb_logger</span><span class="p">:</span> <span class="s1">&#39;SummaryWriter&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># noqa</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
 <span class="sd">            Initialize ``self.`` See ``help(type(self))`` for accurate signature.</span>
 <span class="sd">        Arguments:</span>
@@ -470,7 +485,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">load_expert_data</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">load_expert_data</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
 <span class="sd">            Getting the expert data from ``config.data_path`` attribute in self</span>
 <span class="sd">        Effects:</span>
@@ -490,7 +505,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">reward_model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">state_dict</span><span class="p">[</span><span class="s1">&#39;model&#39;</span><span class="p">])</span>
 
     <span class="k">def</span> <span class="nf">learn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_data</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">expert_data</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
 <span class="sd">            Helper function for ``train`` which calculates loss for train data and expert data.</span>
 <span class="sd">        Arguments:</span>
@@ -512,7 +527,7 @@
         <span class="k">return</span> <span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
 <span class="sd">            Training the Gail reward model. The training and expert data are randomly sampled with designated\</span>
 <span class="sd">                 batch size abstracted from the ``batch_size`` attribute in ``self.cfg`` and \</span>
@@ -530,7 +545,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">train_iter</span> <span class="o">+=</span> <span class="mi">1</span>
 
     <span class="k">def</span> <span class="nf">estimate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">]:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
 <span class="sd">            Estimate reward by rewriting the reward key in each row of the data.</span>
 <span class="sd">        Arguments:</span>
@@ -553,7 +568,7 @@
         <span class="k">return</span> <span class="n">train_data_augmented</span>
 
     <span class="k">def</span> <span class="nf">collect_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
 <span class="sd">            Collecting training data formatted by  ``fn:concat_state_action_pairs``.</span>
 <span class="sd">        Arguments:</span>
@@ -564,7 +579,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">train_data</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">concat_state_action_pairs</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
 
     <span class="k">def</span> <span class="nf">clear_data</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Overview:</span>
 <span class="sd">            Clearing training data. \</span>
 <span class="sd">            This is a side effect function which clears the data attribute in ``self``</span>
